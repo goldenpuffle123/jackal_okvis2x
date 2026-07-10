@@ -8,8 +8,6 @@
 - Set up [ZED SDK](https://www.stereolabs.com/developers/release/latest) (system-wide)
     - For SLAM, recommended to optimize neural models - other models are irrelevant
 - Set up CUDA toolkit dependency (12.8 or 13.0 recommended)
-    - 12.8 for best native OKVIS2-X compatibility
-    - 13.0 for best native cuVSLAM compatibility
 - Environment: `pixi run -e zed setup`
 ### Launch
 - Copy zed_config/ .yaml files into zed_wrapper source (will overwrite):
@@ -65,3 +63,7 @@ Ensure the following topics are visible:
 
 ### Realsense
 - TBD
+
+## OKVIS-2X
+### Patches
+- `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Subscriber.cpp`

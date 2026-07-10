@@ -8,6 +8,7 @@ version = "0.1.0"
 ros2 = ["jazzy"]
 zed = ["zed", "jazzy"]
 orbbec = ["orbbec", "jazzy"]
+okvis2x = ["okvis2x", "jazzy"]
 
 [feature.jazzy.dependencies]
 python = "3.12.*"
@@ -132,3 +133,32 @@ setup = { depends-on = ["build-orbbec"] }
 
 [feature.orbbec.activation]
 scripts = ["orbbec_ws/install/setup.bash"]
+
+[feature.okvis2x.dependencies]
+cmake = ">=3.14"
+make = "*"
+gcc_linux-64 = "13.*"
+gxx_linux-64 = "13.*"
+glog = "<0.7.0"
+gflags = "*"
+eigen = "3.4.*"
+suitesparse = "*"
+geographiclib-cpp = "*"
+pkg-config = "*"
+git = "*"
+python = "3.12.*"
+pip = "*"
+setuptools = "<80.0.0"
+
+[feature.okvis2x.pypi-dependencies]
+torch = "==2.9.1"
+
+[feature.okvis2x.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX:$CONDA_PREFIX/lib/python3.12/site-packages/torch:$CONDA_PREFIX/targets/x86_64-linux"
+LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/targets/x86_64-linux/lib:$LD_LIBRARY_PATH"
+
+[feature.okvis2x.tasks]
+clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submodules https://github.com/ethz-mrl/OKVIS2-X.git || true) && (git clone https://github.com/ethz-mrl/language_feature_msgs.git || true) && (git clone https://github.com/ethz-mrl/language_feature_node.git || true)"
+build = "cd okvis_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=OFF -DHAVE_LIBREALSENSE=OFF -DUSE_COLIDMAP=OFF -DCERES_USE_CUDA=OFF -DCMAKE_DISABLE_FIND_PACKAGE_CUDA=ON -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON"
+# build = "cd okvis_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=ON -DHAVE_LIBREALSENSE=OFF -DUSE_COLIDMAP=OFF -DCMAKE_CUDA_ARCHITECTURES=\"86;89\""
+setup = { depends-on = ["clone", "build"] }

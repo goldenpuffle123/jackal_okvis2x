@@ -6,3 +6,7 @@ rosbag2_*/
 *.mcap
 orbbec_ws/
 zed_ws/
+build
+install
+log
+src
