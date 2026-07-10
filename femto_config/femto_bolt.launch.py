@@ -12,8 +12,8 @@ import os
 def generate_launch_description():
     # Declare arguments
     args = [
-        DeclareLaunchArgument("camera_name", default_value="femtobolt"),
-        DeclareLaunchArgument("depth_registration", default_value="true"),
+        DeclareLaunchArgument("camera_name", default_value="femtobolt"),  # Namespace in ROS2 topics list
+        DeclareLaunchArgument("depth_registration", default_value="true"),  # To align depth and color feed
         DeclareLaunchArgument("serial_number", default_value=""),
         DeclareLaunchArgument("usb_port", default_value=""),
         DeclareLaunchArgument("device_num", default_value="1"),
@@ -39,7 +39,7 @@ def generate_launch_description():
         DeclareLaunchArgument("color_brightness", default_value="-1"),
         DeclareLaunchArgument("enable_color_auto_white_balance", default_value="true"),
         DeclareLaunchArgument("color_white_balance", default_value="-1"),
-        DeclareLaunchArgument("depth_width", default_value="640"),
+        DeclareLaunchArgument("depth_width", default_value="640"), # See notes
         DeclareLaunchArgument("depth_height", default_value="576"),
         DeclareLaunchArgument("depth_fps", default_value="15"),
         DeclareLaunchArgument("depth_format", default_value="Y16"),
@@ -60,11 +60,11 @@ def generate_launch_description():
         DeclareLaunchArgument("ir_exposure", default_value="-1"),
         DeclareLaunchArgument("ir_gain", default_value="-1"),
         DeclareLaunchArgument("ir_brightness", default_value="-1"),
-        DeclareLaunchArgument("enable_sync_output_accel_gyro", default_value="true"),
-        DeclareLaunchArgument("enable_accel", default_value="true"),
+        DeclareLaunchArgument("enable_sync_output_accel_gyro", default_value="true"),  # Publishes to camera_name/gyro_accel/sample
+        DeclareLaunchArgument("enable_accel", default_value="true"),  # For imu
         DeclareLaunchArgument("accel_rate", default_value="200hz"),
         DeclareLaunchArgument("accel_range", default_value="4g"),
-        DeclareLaunchArgument("enable_gyro", default_value="true"),
+        DeclareLaunchArgument("enable_gyro", default_value="true"),  # For imu
         DeclareLaunchArgument("gyro_rate", default_value="200hz"),
         DeclareLaunchArgument("gyro_range", default_value="1000dps"),
         DeclareLaunchArgument("linear_accel_cov", default_value="0.01"),
@@ -106,10 +106,10 @@ def generate_launch_description():
         DeclareLaunchArgument("ordered_pc", default_value="false"),
         DeclareLaunchArgument("enable_depth_scale", default_value="true"),
         DeclareLaunchArgument("align_mode", default_value="SW"),
-        DeclareLaunchArgument('align_target_stream', default_value='COLOR'),# COLOR or DEPTH
+        DeclareLaunchArgument('align_target_stream', default_value='COLOR'), # COLOR aligns d2c, DEPTH c2d
         DeclareLaunchArgument("laser_energy_level", default_value="-1"),
         DeclareLaunchArgument("enable_heartbeat", default_value="false"),
-        DeclareLaunchArgument("time_domain", default_value="device"),
+        DeclareLaunchArgument("time_domain", default_value="global"), # See notes
         DeclareLaunchArgument('device_preset', default_value='Custom'),
 	    DeclareLaunchArgument('enable_hardware_noise_removal_filter', default_value='true'),
     ]
