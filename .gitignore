@@ -1,0 +1,8 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+__pycache__
+rosbag2_*/
+*.mcap
+orbbec_ws/
+zed_ws/
