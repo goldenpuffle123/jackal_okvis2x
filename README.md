@@ -66,4 +66,32 @@ Ensure the following topics are visible:
 
 ## OKVIS-2X
 ### Patches
-- `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Subscriber.cpp`
+In `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Subscriber.cpp` (or reference patches/Subscriber.cpp):
+```diff
+try {
+    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+    raw = cv_ptr->image;
++       if(msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
++           raw = raw / 1000.0f; // convert to meters
++       }
+} catch (cv_bridge::Exception& e) {
+    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
+    return;
+}
+```
+```diff
+-if(std::abs((tcheck - tdepth).toSec()) < OKVIS_THRESHOLD_SYNC && tcheck>=tdepth) {
++if(std::abs((tcheck - tdepth).toSec()) < OKVIS_THRESHOLD_SYNC) {
+    depthSyncedTime = entry.first;
+    depthImages[i] = depthImagesReceived_.at(i).at(entry.first);
+    timestampedDepthImages[i] = std::make_pair(tdepth, depthImagesReceived_.at(i).at(entry.first));
+    syncedDepth = true;
+    break;
+}
+```
+### Setup
+```bash
+pixi run -e okvis2x clone # Then confirm all submodules are cloned
+# **PATCH AS ABOVE**
+pixi run -e okvis2x build
+```
