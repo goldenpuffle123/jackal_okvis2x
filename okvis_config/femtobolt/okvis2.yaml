@@ -1,26 +1,31 @@
 %YAML:1.2
 cameras:
   - {T_SC:
-        # Old orbbec (need to test)
-        # [-0.006418, -0.003809, -0.999972, -0.051143, # Mtx from tf on jul 8
-        #  -0.999956, -0.006744, 0.006444, 0.005187,
-        #  -0.006768, 0.999970, -0.003766, 0.010808,
-        #  0.000000, 0.000000, 0.000000, 1.000000],
-        # New orbbec
+        # Old orbbec (TUEILSY CAM 04)
+        # [-0.003648, -0.001160, -0.999993, -0.051126,
+        #  -0.999985, -0.003972, 0.003652, 0.005467,
+        #  -0.003977, 0.999991, -0.001145, 0.010936,
+        #  0.000000, 0.000000, 0.000000, 1.00000],
+        # New orbbec (TUEILSY CAM 12)
         [0.000237, -0.001956, -0.999998, -0.050767,
          -0.999993, 0.003643, -0.000244, 0.005843,
           0.003643, 0.999991, -0.001955, 0.011088,
           0.000000, 0.000000, 0.000000, 1.000000],
 
      image_dimension: [1280, 720],
-    #  distortion_coefficients: [0.06869034206676429, -0.0677127304932299, 0.0005482402976918166, 0.0005173134142957399],
+    # Old orbbec
+    #  distortion_coefficients: [0.07717769593000412, -0.10669456422328949, 0.00014132213254924864, -0.00018402993737254292, 0.04393484815955162],
     # New cam
      distortion_coefficients: [0.08179931342601776,-0.11067460477352142,1.840424374677241e-05,0.00036593235563486814,0.04651212692260742],
      distortion_type: radialtangential,
-    #  focal_length: [747.8538196349288, 747.242788562514],
+    # Old cam
+    #  focal_length: [748.09991455, 747.54937744141],
     # New cam
      focal_length: [749.84619140625, 749.80859375],
-    #  principal_point: [636.1069415267818, 372.2386800231293],
+
+
+    # Old cam
+    #  principal_point: [634.53527832, 370.82565308],
     # New cam
     principal_point: [638.999267578125, 352.4871826171875],
      cam_model: pinhole,
@@ -49,6 +54,17 @@ imu_parameters:
   use: true # enable IMU
   a_max: 40.0 # acceleration saturation [m/s^2]
   g_max: 17.5 # gyro saturation [rad/s]
+  # Old cam
+  # sigma_g_c: 0.001 # gyro noise density [rad/s/sqrt(Hz)]
+  # sigma_bg: 0.001 # gyro bias prior [rad/s]
+  # sigma_a_c: 0.01 # accelerometer noise density [m/s^2/sqrt(Hz)]
+  # sigma_ba: 0.2 # accelerometer bias prior [m/s^2]
+  # sigma_gw_c: 0.001 # gyro drift noise density [rad/s^s/sqrt(Hz)]
+  # sigma_aw_c: 0.001 # accelerometer drift noise density [m/s^2/sqrt(Hz)]
+  # tau: 3600.0 # reversion time constant, currently not in use [s]
+  # a0: [0.0, 0.0, 0.0] # Initial accelerometer bias [m/s^2]
+  # g0: [0.0, 0.0, 0.0] # Initial gyro bias [rad/s]
+
   # New cam
   sigma_g_c: 0.001 # gyro noise density [rad/s/sqrt(Hz)]
   sigma_bg: 0.001 # gyro bias prior [rad/s]

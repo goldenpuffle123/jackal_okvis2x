@@ -16,6 +16,10 @@ ros-jazzy-desktop = "*"
 colcon-common-extensions = "*"
 ros-jazzy-tf2-tools = "*"
 
+[feature.jazzy.pypi-dependencies]
+evo = "*"
+rosbags="*"
+
 [feature.jazzy.activation.env]
 ROS_DOMAIN_ID="0"
 FASTDDS_BUILTIN_TRANSPORTS="LARGE_DATA"

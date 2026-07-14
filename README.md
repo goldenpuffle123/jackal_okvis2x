@@ -43,7 +43,7 @@ Ensure the following topics are visible:
 ### Parameters
 Ensure the following topics are visible:
 ```bash
-/femtobolt/depth_image_raw    # Depth image aligned to color
+/femtobolt/depth/image_raw    # Depth image aligned to color
 /femtobolt/color/image_raw
 /femtobolt/color/camera_info  # Parameters of left
 /femtobolt/gyro_accel/sample  # Imu data
@@ -52,7 +52,7 @@ Ensure the following topics are visible:
 - T_SC for imu --> color: `ros2 run tf2_ros tf2_echo femtobolt_accel_gyro_optical_frame femtobolt_color_optical_frame -p 6`
     - If not found, try `ros2 topic echo TOPIC --once --field header.frame_id`
 - Parameters for camera (look at width, height, k/p):
-    - `ros2 topic echo //femtobolt/color/camera_info --once`
+    - `ros2 topic echo /femtobolt/color/camera_info --once`
 ### Notes
 - Imu-Depth-Color timestamp synchronization bug when stopping and restarting Orbbec SDK
     - **UNPLUG ORBBEC FROM COMPUTER AND RELAUNCH SDK**
