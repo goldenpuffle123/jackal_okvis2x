@@ -331,21 +331,17 @@ void Subscriber::synchronizeData() {
 
         for(const auto& it : timestampedDepthImages) {
           if(cameraMeasurements.find(it.first) != cameraMeasurements.end()) {
-            //Check if they are time synchronized or not
-            bool imageAdded = false;
+            // A colour measurement for this camera index was already created above (i.e. this
+            // is a combined rgb+depth camera). We already know the colour and depth images
+            // belong to the same synchronized capture (checked by the caller via `synced &&
+            // syncedDepth`), so attach the depth image to the existing measurement directly.
+            // We previously required an exact timestamp match here, but independently-stamped
+            // colour/depth streams from the same physical sensor (e.g. Orbbec Femto Bolt) are
+            // consistently a fraction of a millisecond apart and never match exactly, which
+            // silently discarded the colour image and replaced it with a depth-only
+            // measurement on every single frame.
             for(auto& image : cameraMeasurements.at(it.first)) {
-              if(image.timeStamp == it.second.first){
-                image.measurement.depthImage = it.second.second.clone();
-                imageAdded = true;
-              }
-            }
-
-            if(!imageAdded) {
-              okvis::CameraMeasurement cameraMeasure;
-              cameraMeasure.timeStamp = it.second.first;
-              cameraMeasure.measurement.depthImage = it.second.second.clone();
-              cameraMeasure.sensorId = it.first;
-              cameraMeasurements[it.first] = {cameraMeasure};
+              image.measurement.depthImage = it.second.second.clone();
             }
           } else {
             okvis::CameraMeasurement cameraMeasure;

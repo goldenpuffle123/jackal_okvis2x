@@ -89,6 +89,56 @@ try {
     break;
 }
 ```
+```diff
+for(const auto& it : timestampedDepthImages) {
+    if(cameraMeasurements.find(it.first) != cameraMeasurements.end()) {
+-       bool imageAdded = false;
+-       for(auto& image : cameraMeasurements.at(it.first)) {
+-           if(image.timeStamp == it.second.first){
+-               image.measurement.depthImage = it.second.second.clone();
+-               imageAdded = true;
+-           }
+-       }
+-       if(!imageAdded) {
+-           okvis::CameraMeasurement cameraMeasure;
+-           cameraMeasure.timeStamp = it.second.first;
+-           cameraMeasure.measurement.depthImage = it.second.second.clone();
+-           cameraMeasure.sensorId = it.first;
+-           cameraMeasurements[it.first] = {cameraMeasure};
+-       }
++       // Colour/depth from the same rgb+depth camera are never stamped exactly equal
++       // (e.g. Orbbec Femto Bolt is consistently ~0.9ms off), so the exact-timestamp
++       // check above always failed and silently dropped the colour image every frame.
++       for(auto& image : cameraMeasurements.at(it.first)) {
++           image.measurement.depthImage = it.second.second.clone();
++       }
+    } else {
+        ...
+    }
+}
+```
+In `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Publisher.cpp`:
+```diff
+// In publishSubmapsAsCallback() (around lines 615, 628):
+-        pubSubmapMesh_.publish(markerarraymsg_);
+-        markerarraymsg_->markers.clear();
++        pubSubmapMesh_.publish(markerarraymsg_);
++        // ThreadedPublisher serializes asynchronously on a worker thread. Mutating the
++        // message after publish() (e.g. clear()/push_back()) races that worker and corrupts
++        // the heap (geometry_msgs::Point doubles overwrite trajectory map nodes → SIGBUS).
++        markerarraymsg_ = std::make_shared<visualization_msgs::msg::MarkerArray>();
+```
+```diff
+// In publishEstimatorUpdate() (around line 342):
+-      pubPath_.publish(path); // first publish finished segment
++      pubPath_.publish(path); // first publish finished segment
++      // ThreadedPublisher serializes asynchronously. Never mutate a handed-off message;
++      // deep-copy it first if you need to clear/refill it.
++      path = std::make_shared<visualization_msgs::msg::Marker>(*path);
+       path->id = roundedId;
+       // ..object ID useful in conjunction with namespace for manipulating&deleting the object later
+       geometry_msgs::msg::Point lastPoint =  path->points.back(); // save last point
+```
 ### Setup
 ```bash
 pixi run -e okvis2x clone # Then confirm all submodules are cloned
