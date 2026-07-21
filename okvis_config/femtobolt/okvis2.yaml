@@ -67,7 +67,7 @@ imu_parameters:
 
   # New cam
   sigma_g_c: 0.001 # gyro noise density [rad/s/sqrt(Hz)]
-  sigma_bg: 0.001 # gyro bias prior [rad/s]
+  sigma_bg: 0.005 # gyro bias prior [rad/s]
   sigma_a_c: 0.005 # accelerometer noise density [m/s^2/sqrt(Hz)]
   sigma_ba: 0.05 # accelerometer bias prior [m/s^2]
   sigma_gw_c: 0.001 # gyro drift noise density [rad/s^s/sqrt(Hz)]
@@ -89,7 +89,7 @@ frontend_parameters:
   absolute_threshold: 30.0 # absolute Harris corner threshold (noise floor)
   matching_threshold: 50.0 # BRISK descriptor matching threshold
   octaves: 0 # number of octaves for detection. 0 means single-scale at highest resolution
-  max_num_keypoints: 700 # restrict to a maximum of this many keypoints per image (strongest ones) 400
+  max_num_keypoints: 600 # restrict to a maximum of this many keypoints per image (strongest ones) 400
   keyframe_overlap: 0.59 # minimum field-of-view overlap 0.55
   use_cnn: false # whether to use the segmentation CNN
   parallelise_detection: true
@@ -97,11 +97,11 @@ frontend_parameters:
 
 # estimator parameters
 estimator_parameters:
-  num_keyframes: 4 # number of keyframes in optimisation window
+  num_keyframes: 5 # number of keyframes in optimisation window
   num_loop_closure_frames: 3 # number of loop closure frames in optimisation window
-  num_imu_frames: 3 # number of frames linked by most recent nonlinear IMU error terms
+  num_imu_frames: 12 # number of frames linked by most recent nonlinear IMU error terms
   do_loop_closures: true # whether to do VI-SLAM or VIO
-  do_final_ba: true # Whether to run a full final BA
+  do_final_ba: false # Whether to run a full final BA
   enforce_realtime: false # whether to limit the time budget for optimisation
   realtime_min_iterations: 3 # minimum number of iterations always performed
   realtime_max_iterations: 10 # never do more than these, even if not converged
@@ -114,7 +114,7 @@ estimator_parameters:
 
 # some options for how and what to output
 output_parameters:
-  display_topview: true # Displays top view of the trajectory. Might become slow for long sequences.
-  display_matches: true  # displays debug video and matches. May be slow.
+  display_topview: false # Displays top view of the trajectory. Might become slow for long sequences.
+  display_matches: false  # displays debug video and matches. May be slow.
   display_overhead: false # debug overhead image. Is slow.
   enable_submapping: true

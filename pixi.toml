@@ -22,7 +22,7 @@ rosbags="*"
 
 [feature.jazzy.activation.env]
 ROS_DOMAIN_ID="0"
-FASTDDS_BUILTIN_TRANSPORTS="LARGE_DATA"
+# FASTDDS_BUILTIN_TRANSPORTS="LARGE_DATA"
 RMW_IMPLEMENTATION = "rmw_cyclonedds_cpp"
 # ROS_MASTER_URI="http://localhost:11311"
 # ROS_HOSTNAME="localhost"
@@ -165,7 +165,7 @@ LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$CONDA_PREFIX/targets/x86_64-linux/lib:$LD_LI
 scripts = ["okvis_ws/install/setup.bash"]
 
 [feature.okvis2x.tasks]
-clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submodules https://github.com/ethz-mrl/OKVIS2-X.git || true) && (git clone https://github.com/ethz-mrl/language_feature_msgs.git || true) && (git clone https://github.com/ethz-mrl/language_feature_node.git || true)"
+clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submodules https://github.com/goldenpuffle123/okvis2x_femtobolt.git || true) && (git clone https://github.com/ethz-mrl/language_feature_msgs.git || true) && (git clone https://github.com/ethz-mrl/language_feature_node.git || true)"
 
 # Mapping without color
 # build = "cd okvis_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=OFF -DHAVE_LIBREALSENSE=OFF -DUSE_COLIDMAP=OFF -DCERES_USE_CUDA=OFF -DCMAKE_DISABLE_FIND_PACKAGE_CUDA=ON -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON"

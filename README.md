@@ -65,7 +65,12 @@ Ensure the following topics are visible:
 - TBD
 
 ## OKVIS-2X
-### Patches
+### Setup
+```bash
+pixi run -e okvis2x clone # Then confirm all submodules are cloned
+pixi run -e okvis2x build
+```
+### Patches (REFERENCE ONLY)
 In `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Subscriber.cpp` (or reference patches/Subscriber.cpp):
 ```diff
 try {
@@ -138,10 +143,4 @@ In `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Publisher.cpp`:
        path->id = roundedId;
        // ..object ID useful in conjunction with namespace for manipulating&deleting the object later
        geometry_msgs::msg::Point lastPoint =  path->points.back(); // save last point
-```
-### Setup
-```bash
-pixi run -e okvis2x clone # Then confirm all submodules are cloned
-# **PATCH AS ABOVE**
-pixi run -e okvis2x build
 ```
