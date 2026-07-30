@@ -52,7 +52,7 @@ camera_parameters:
 # the IMU sensor model
 imu_parameters:
   use: true # enable IMU
-  a_max: 40.0 # acceleration saturation [m/s^2]
+  a_max: 15.0 # acceleration saturation [m/s^2]
   g_max: 17.5 # gyro saturation [rad/s]
   # Old cam
   # sigma_g_c: 0.001 # gyro noise density [rad/s/sqrt(Hz)]
@@ -71,7 +71,7 @@ imu_parameters:
   sigma_a_c: 0.005 # accelerometer noise density [m/s^2/sqrt(Hz)]
   sigma_ba: 0.05 # accelerometer bias prior [m/s^2]
   sigma_gw_c: 0.001 # gyro drift noise density [rad/s^s/sqrt(Hz)]
-  sigma_aw_c: 0.001 # accelerometer drift noise density [m/s^2/sqrt(Hz)]
+  sigma_aw_c: 0.005 # accelerometer drift noise density [m/s^2/sqrt(Hz)]
   tau: 3600.0 # reversion time constant, currently not in use [s]
   a0: [0.0, 0.0, 0.0] # Initial accelerometer bias [m/s^2]
   g0: [0.0, 0.0, 0.0] # Initial gyro bias [rad/s]
@@ -102,7 +102,7 @@ estimator_parameters:
   num_imu_frames: 12 # number of frames linked by most recent nonlinear IMU error terms
   do_loop_closures: true # whether to do VI-SLAM or VIO
   do_final_ba: false # Whether to run a full final BA
-  enforce_realtime: false # whether to limit the time budget for optimisation
+  enforce_realtime: true # whether to limit the time budget for optimisation
   realtime_min_iterations: 3 # minimum number of iterations always performed
   realtime_max_iterations: 10 # never do more than these, even if not converged
   realtime_time_limit: 0.03 # time budget for realtime optimisation [s]

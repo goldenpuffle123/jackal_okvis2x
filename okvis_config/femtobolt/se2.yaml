@@ -12,9 +12,9 @@ general:
   depth_image_resolution_downsampling: 1
 
   # Submapping
-  submap_kf_threshold: 10
+  submap_kf_threshold: 5
   submap_overlap_ratio: 0.6
-  submap_min_frames: 10
+  submap_min_frames: 5
   near_plane: 0.4
   far_plane: 7.0
 
@@ -22,7 +22,7 @@ general:
   use_map_to_map_factors: false
   use_map_to_live_factors: false
   n_factors_per_state: 100 # number of points per depth images
-  voxel_grid_resolution: 0.01
+  voxel_grid_resolution: 0.05
   sensor_error: 0.04 # 1-sigma for obsv. noise [m]
 
   # Network depth settings
@@ -33,7 +33,7 @@ general:
 
 map:
   dim:            [10.0, 10.0, 10.0]
-  res:            0.01
+  res:            0.05
 
 data:
   # occupancy data

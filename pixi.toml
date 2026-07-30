@@ -131,7 +131,7 @@ ros-jazzy-ament-lint-auto = "*"
 ros-jazzy-ament-lint-common = "*"
 
 [feature.orbbec.tasks]
-clone-orbbec = { cmd = "mkdir -p orbbec_ws/src && bash -c '[ -d orbbec_ws/src/OrbbecSDK_ROS2 ] || git clone -b v2-main https://github.com/orbbec/OrbbecSDK_ROS2.git orbbec_ws/src/OrbbecSDK_ROS2'" }
+clone-orbbec = { cmd = "mkdir -p orbbec_ws/src && bash -c '[ -d orbbec_ws/src/OrbbecSDK_ROS2 ] || git clone -b v2-main --revision=cb24b007cd3309bc5340fa89d5082b69eba20601 https://github.com/orbbec/OrbbecSDK_ROS2.git orbbec_ws/src/OrbbecSDK_ROS2'" }
 build-orbbec = { cmd = "cd orbbec_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release", depends-on = ["clone-orbbec"] }
 setup = { depends-on = ["build-orbbec"] }
 
