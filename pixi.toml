@@ -9,6 +9,7 @@ ros2 = ["jazzy"]
 zed = ["zed", "jazzy"]
 orbbec = ["orbbec", "jazzy"]
 okvis2x = ["okvis2x", "jazzy"]
+okvis2x-fa = ["findanything", "jazzy"]
 
 [feature.jazzy.dependencies]
 python = "3.12.*"
@@ -174,3 +175,53 @@ clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submod
 build = "cd okvis_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=OFF -DHAVE_LIBREALSENSE=OFF -DUSE_COLIDMAP=ON -DCERES_USE_CUDA=OFF -DCMAKE_DISABLE_FIND_PACKAGE_CUDA=ON -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON"
 
 setup = { depends-on = ["clone", "build"] }
+
+
+[feature.findanything.dependencies]
+cmake = ">=3.14"
+make = "*"
+gcc_linux-64 = "13.*"
+gxx_linux-64 = "13.*"
+glog = "<0.7.0"
+gflags = "*"
+eigen = "3.4.*"
+suitesparse = "*"
+geographiclib-cpp = "*"
+pkg-config = "*"
+git = "*"
+python = "3.12.*"
+pip = "*"
+setuptools = "<80.0.0"
+# CUDA toolchain for libtorch: nvcc + headers + stub libs, pinned to the same
+# 12.8 as the torch wheel below (Torch's cuda.cmake FATAL_ERRORs on a mismatch).
+cuda-version = "12.8.*"
+cuda-toolkit = "12.8.*"
+cudnn = "9.*"
+# language_feature_node (Qt query GUI + MaskCLIP text encoder)
+pyqt = "*"
+pillow = "*"
+ftfy = "*"
+regex = "*"
+tqdm = "*"
+einops = "*"
+
+[feature.findanything.pypi-dependencies]
+torch = "==2.9.1"          # +cu128 wheel: bundles cudart/cudnn/cublas at runtime
+torchvision = "==0.24.1"   # required by the MaskCLIP text encoder
+
+[feature.findanything.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX:$CONDA_PREFIX/lib/python3.12/site-packages/torch:$CONDA_PREFIX/targets/x86_64-linux"
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$CONDA_PREFIX/targets/x86_64-linux/lib:$LD_LIBRARY_PATH"
+CUDA_HOME = "$CONDA_PREFIX"
+CUDAToolkit_ROOT = "$CONDA_PREFIX"
+TORCH_CUDA_ARCH_LIST = "8.6"
+
+[feature.findanything.activation]
+scripts = ["okvis_ws/install_fa/setup.bash"]
+
+[feature.findanything.tasks]
+clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submodules https://github.com/goldenpuffle123/okvis2x_femtobolt.git || true) && (git clone https://github.com/ethz-mrl/language_feature_msgs.git || true) && (git clone https://github.com/ethz-mrl/language_feature_node.git || true)"
+
+build = "cd okvis_ws && colcon build --symlink-install --build-base build_fa --install-base install_fa --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=ON -DUSE_GPU=ON -DUSE_COLIDMAP=ON -DHAVE_LIBREALSENSE=OFF -DUSE_CUDA=OFF"
+
+setup = { depends-on = ["clone", "patch", "build"] }

@@ -22,7 +22,7 @@ general:
   use_map_to_map_factors: false
   use_map_to_live_factors: false
   n_factors_per_state: 100 # number of points per depth images
-  voxel_grid_resolution: 0.05
+  voxel_grid_resolution: 0.02
   sensor_error: 0.04 # 1-sigma for obsv. noise [m]
 
   # Network depth settings
@@ -33,7 +33,7 @@ general:
 
 map:
   dim:            [10.0, 10.0, 10.0]
-  res:            0.05
+  res:            0.02
 
 data:
   # occupancy data

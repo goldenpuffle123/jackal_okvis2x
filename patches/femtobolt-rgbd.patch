@@ -1,0 +1,187 @@
+diff --git a/okvis_ros2/include/okvis/ros2/Publisher.hpp b/okvis_ros2/include/okvis/ros2/Publisher.hpp
+index 7132b44..e79098e 100644
+--- a/okvis_ros2/include/okvis/ros2/Publisher.hpp
++++ b/okvis_ros2/include/okvis/ros2/Publisher.hpp
+@@ -248,7 +248,7 @@ class Publisher
+   double odometryPublishingRate_; ///< Keep track of last publishing (to maintain rate).
+   okvis::Time lastTime_ = okvis::Time(0); ///< Publishing rate for realtime propagation.
+   TrajectoryOutput trajectoryOutput_; ///< Trajectory output in case demanded.
+-  std::atomic_bool trajectoryLocked_; ///< Lock the trajectory object (realtime/update are async.).
++  std::mutex trajectoryMutex_; ///< Guards all access to trajectory_ (realtime/update run on different threads).
+   std::string meshesDir_; ///< Directory for meshes.
+   nav_msgs::msg::Path path_; ///< The path message.
+   Eigen::Matrix4d T_SC_; // Tf from Sensor to Camera
+diff --git a/okvis_ros2/src/Publisher.cpp b/okvis_ros2/src/Publisher.cpp
+index 3377bf5..a7df4de 100644
+--- a/okvis_ros2/src/Publisher.cpp
++++ b/okvis_ros2/src/Publisher.cpp
+@@ -39,8 +39,7 @@ Publisher::Publisher(
+     : threadedOdometryPublisher_(threadedOdometryPublisher),
+       threadedImagePublisher_(threadedImagePublisher),
+       threadedPublisher_(threadedPublisher),
+-      trajectoryOutput_(false),
+-      trajectoryLocked_(false)
++      trajectoryOutput_(false)
+ {
+   setupNode(node);
+   text_embedding_vector_ = Descriptor(okvis::chair_embedding.data());
+@@ -125,8 +124,13 @@ bool Publisher::realtimePredictAndPublish(const okvis::Time& stamp,
+   // add to Trajectory if possible
+   bool success = false;
+   State state;
+-  if(!trajectoryLocked_) {
+-    trajectoryLocked_ = true;
++  {
++    std::unique_lock<std::mutex> lock(trajectoryMutex_, std::try_to_lock);
++    if(!lock.owns_lock()) {
++      // Trajectory is busy being updated by the estimator thread right now;
++      // skip this IMU sample's realtime preview rather than block/race.
++      return false;
++    }
+     for(auto & imuMeasurement : imuMeasurements_) {
+       State propagatedState;
+       if(trajectory_.addImuMeasurement(imuMeasurement.timeStamp,
+@@ -138,11 +142,8 @@ bool Publisher::realtimePredictAndPublish(const okvis::Time& stamp,
+       }
+     }
+     imuMeasurements_.clear();
+-    trajectoryLocked_ = false;
+-    if(!success) {
+-      return false;
+-    }
+-  } else {
++  }
++  if(!success) {
+     return false;
+   }
+ 
+@@ -286,11 +287,12 @@ void Publisher::publishEstimatorUpdate(
+   }
+ 
+   // update Trajectory object
++  // Held for the whole path-building section below too: it reads the same
++  // trajectory_ via getState(), which otherwise races with realtimePredictAndPublish()
++  // updating it concurrently on the IMU callback thread.
++  std::lock_guard<std::mutex> trajectoryLock(trajectoryMutex_);
+   std::set<okvis::StateId> affectedStateIds;
+-  while(trajectoryLocked_);
+-  trajectoryLocked_ = true;
+   trajectory_.update(trackingState, updatedStates, affectedStateIds);
+-  trajectoryLocked_ = false;
+ 
+   // now for the path (in segments of 1000 state IDs)
+   auto path = std::make_shared<visualization_msgs::msg::Marker>(); // The path message.
+@@ -338,6 +340,10 @@ void Publisher::publishEstimatorUpdate(
+     uint64_t roundedId = (id/1000)*1000;
+     if(path->id != int64_t(roundedId)) {
+       pubPath_.publish(path); // first publish finished segment
++      // The ThreadedPublisher now owns this message and serialises it on its own worker
++      // thread. Never mutate it again here: take a fresh deep copy and mutate that,
++      // otherwise the clear()/push_back() below race the worker (heap corruption).
++      path = std::make_shared<visualization_msgs::msg::Marker>(*path);
+       path->id = roundedId;
+       // ..object ID useful in conjunction with namespace for manipulating&deleting the object later
+       geometry_msgs::msg::Point lastPoint =  path->points.back(); // save last point
+@@ -611,7 +617,10 @@ void Publisher::publishSubmapsAsCallback(std::unordered_map<uint64_t, okvis::kin
+       if(submap_publisher_buffer == 30){
+         submap_publisher_buffer = 0;
+         pubSubmapMesh_.publish(markerarraymsg_);
+-        markerarraymsg_->markers.clear();
++        // The ThreadedPublisher now owns this message and serialises it on its own
++        // worker thread. Mutating it here (clear()/push_back()) races that worker and
++        // corrupts the heap. Hand out a fresh message instead.
++        markerarraymsg_ = std::make_shared<visualization_msgs::msg::MarkerArray>();
+       }
+     }
+   }
+@@ -624,7 +633,10 @@ void Publisher::publishSubmapsAsCallback(std::unordered_map<uint64_t, okvis::kin
+       if(submap_publisher_buffer == 30){
+         submap_publisher_buffer = 0;
+         pubSubmapMesh_.publish(markerarraymsg_);
+-        markerarraymsg_->markers.clear();
++        // The ThreadedPublisher now owns this message and serialises it on its own
++        // worker thread. Mutating it here (clear()/push_back()) races that worker and
++        // corrupts the heap. Hand out a fresh message instead.
++        markerarraymsg_ = std::make_shared<visualization_msgs::msg::MarkerArray>();
+       }
+     }
+   }
+@@ -967,7 +979,10 @@ void Publisher::republishMeshes()
+       if(submap_publisher_buffer == 30){
+         submap_publisher_buffer = 0;
+         pubSubmapMesh_.publish(markerarraymsg_);
+-        markerarraymsg_->markers.clear();
++        // The ThreadedPublisher now owns this message and serialises it on its own
++        // worker thread. Mutating it here (clear()/push_back()) races that worker and
++        // corrupts the heap. Hand out a fresh message instead.
++        markerarraymsg_ = std::make_shared<visualization_msgs::msg::MarkerArray>();
+       }
+     }
+   }
+@@ -980,7 +995,10 @@ void Publisher::republishMeshes()
+       if(submap_publisher_buffer == 30){
+         submap_publisher_buffer = 0;
+         pubSubmapMesh_.publish(markerarraymsg_);
+-        markerarraymsg_->markers.clear();
++        // The ThreadedPublisher now owns this message and serialises it on its own
++        // worker thread. Mutating it here (clear()/push_back()) races that worker and
++        // corrupts the heap. Hand out a fresh message instead.
++        markerarraymsg_ = std::make_shared<visualization_msgs::msg::MarkerArray>();
+       }
+     }
+   }
+diff --git a/okvis_ros2/src/Subscriber.cpp b/okvis_ros2/src/Subscriber.cpp
+index ecfb3dd..81261f8 100644
+--- a/okvis_ros2/src/Subscriber.cpp
++++ b/okvis_ros2/src/Subscriber.cpp
+@@ -169,6 +169,9 @@ void Subscriber::depthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& ms
+   try {
+     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+     raw = cv_ptr->image;
++    if(msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
++      raw = raw / 1000.0f; // convert to meters
++    }
+   } catch (cv_bridge::Exception& e) {
+     RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
+     return;
+@@ -279,7 +282,7 @@ void Subscriber::synchronizeData() {
+           okvis::Time tdepth;
+           tdepth.fromNSec(entry.first);
+           //There is a higher unsynchronization between depth images and ir images from the realsense
+-          if(std::abs((tcheck - tdepth).toSec()) < OKVIS_THRESHOLD_SYNC && tcheck>=tdepth) {
++          if(std::abs((tcheck - tdepth).toSec()) < OKVIS_THRESHOLD_SYNC) {
+             depthSyncedTime = entry.first;
+             depthImages[i] = depthImagesReceived_.at(i).at(entry.first);
+             timestampedDepthImages[i] = std::make_pair(tdepth, depthImagesReceived_.at(i).at(entry.first));
+@@ -328,21 +331,17 @@ void Subscriber::synchronizeData() {
+ 
+         for(const auto& it : timestampedDepthImages) {
+           if(cameraMeasurements.find(it.first) != cameraMeasurements.end()) {
+-            //Check if they are time synchronized or not
+-            bool imageAdded = false;
++            // A colour measurement for this camera index was already created above (i.e. this
++            // is a combined rgb+depth camera). We already know the colour and depth images
++            // belong to the same synchronized capture (checked by the caller via `synced &&
++            // syncedDepth`), so attach the depth image to the existing measurement directly.
++            // We previously required an exact timestamp match here, but independently-stamped
++            // colour/depth streams from the same physical sensor (e.g. Orbbec Femto Bolt) are
++            // consistently a fraction of a millisecond apart and never match exactly, which
++            // silently discarded the colour image and replaced it with a depth-only
++            // measurement on every single frame.
+             for(auto& image : cameraMeasurements.at(it.first)) {
+-              if(image.timeStamp == it.second.first){
+-                image.measurement.depthImage = it.second.second.clone();
+-                imageAdded = true;
+-              }
+-            }
+-
+-            if(!imageAdded) {
+-              okvis::CameraMeasurement cameraMeasure;
+-              cameraMeasure.timeStamp = it.second.first;
+-              cameraMeasure.measurement.depthImage = it.second.second.clone();
+-              cameraMeasure.sensorId = it.first;
+-              cameraMeasurements[it.first] = {cameraMeasure};
++              image.measurement.depthImage = it.second.second.clone();
+             }
+           } else {
+             okvis::CameraMeasurement cameraMeasure;

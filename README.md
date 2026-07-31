@@ -70,77 +70,53 @@ Ensure the following topics are visible:
 pixi run -e okvis2x clone # Then confirm all submodules are cloned
 pixi run -e okvis2x build
 ```
-### Patches (REFERENCE ONLY)
-In `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Subscriber.cpp` (or reference patches/Subscriber.cpp):
-```diff
-try {
-    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
-    raw = cv_ptr->image;
-+       if(msg->encoding == sensor_msgs::image_encodings::TYPE_16UC1) {
-+           raw = raw / 1000.0f; // convert to meters
-+       }
-} catch (cv_bridge::Exception& e) {
-    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
-    return;
-}
+### Patches
+See [patched fork](https://github.com/goldenpuffle123/okvis2x_femtobolt).
+
+## FindAnything (open-vocabulary mapping)
+
+`okvis2x-fa` environment builds the *same* `okvis_ws/src` tree into
+`okvis_ws/build_fa` + `okvis_ws/install_fa`.
+
+- If you change `TORCH_CUDA_ARCH_LIST` in `pixi.toml` (default `8.6`), match your GPU.
+- Configure ESAM_FAST or ESAM_ORIGINAL in OKVIS2-X/CMakeLists.txt
+
+### Setup
+```bash
+pixi run -e okvis2x-fa setup       # clone + patch + build
 ```
-```diff
--if(std::abs((tcheck - tdepth).toSec()) < OKVIS_THRESHOLD_SYNC && tcheck>=tdepth) {
-+if(std::abs((tcheck - tdepth).toSec()) < OKVIS_THRESHOLD_SYNC) {
-    depthSyncedTime = entry.first;
-    depthImages[i] = depthImagesReceived_.at(i).at(entry.first);
-    timestampedDepthImages[i] = std::make_pair(tdepth, depthImagesReceived_.at(i).at(entry.first));
-    syncedDepth = true;
-    break;
-}
+```bash
+pixi run -e okvis2x-fa clone
+pixi run -e okvis2x-fa build
 ```
-```diff
-for(const auto& it : timestampedDepthImages) {
-    if(cameraMeasurements.find(it.first) != cameraMeasurements.end()) {
--       bool imageAdded = false;
--       for(auto& image : cameraMeasurements.at(it.first)) {
--           if(image.timeStamp == it.second.first){
--               image.measurement.depthImage = it.second.second.clone();
--               imageAdded = true;
--           }
--       }
--       if(!imageAdded) {
--           okvis::CameraMeasurement cameraMeasure;
--           cameraMeasure.timeStamp = it.second.first;
--           cameraMeasure.measurement.depthImage = it.second.second.clone();
--           cameraMeasure.sensorId = it.first;
--           cameraMeasurements[it.first] = {cameraMeasure};
--       }
-+       // Colour/depth from the same rgb+depth camera are never stamped exactly equal
-+       // (e.g. Orbbec Femto Bolt is consistently ~0.9ms off), so the exact-timestamp
-+       // check above always failed and silently dropped the colour image every frame.
-+       for(auto& image : cameraMeasurements.at(it.first)) {
-+           image.measurement.depthImage = it.second.second.clone();
-+       }
-    } else {
-        ...
-    }
-}
+
+### Launch (Femto Bolt)
+```bash
+pixi shell -e okvis2x-fa
+ros2 launch okvis_config/femtobolt/okvis2x_node_findanything_orbbec.launch.xml
 ```
-In `okvis_ws/src/OKVIS2-X/okvis_ros2/src/Publisher.cpp`:
-```diff
-// In publishSubmapsAsCallback() (around lines 615, 628):
--        pubSubmapMesh_.publish(markerarraymsg_);
--        markerarraymsg_->markers.clear();
-+        pubSubmapMesh_.publish(markerarraymsg_);
-+        // ThreadedPublisher serializes asynchronously on a worker thread. Mutating the
-+        // message after publish() (e.g. clear()/push_back()) races that worker and corrupts
-+        // the heap (geometry_msgs::Point doubles overwrite trajectory map nodes → SIGBUS).
-+        markerarraymsg_ = std::make_shared<visualization_msgs::msg::MarkerArray>();
+
+### Querying
+Either type into the Qt window (`Activations` = colour meshes by similarity to the query,
+`Colors` = back to RGB), or headless:
+```bash
+python tools/language_query.py "a wooden chair" --mode Activations
+python tools/language_query.py "a wooden chair" --mode Colors   # back to RGB colouring
 ```
-```diff
-// In publishEstimatorUpdate() (around line 342):
--      pubPath_.publish(path); // first publish finished segment
-+      pubPath_.publish(path); // first publish finished segment
-+      // ThreadedPublisher serializes asynchronously. Never mutate a handed-off message;
-+      // deep-copy it first if you need to clear/refill it.
-+      path = std::make_shared<visualization_msgs::msg::Marker>(*path);
-       path->id = roundedId;
-       // ..object ID useful in conjunction with namespace for manipulating&deleting the object later
-       geometry_msgs::msg::Point lastPoint =  path->points.back(); // save last point
+Both publish a 768-D CLIP text embedding on `/language_processor/embedding`; the node logs
+`Received Text Query: ...` and re-colours all submap meshes it has kept.
+
+### Topics
+```bash
+/okvis/okvis_submap_mesh   # visualization_msgs/MarkerArray: object-ID or activation colours
+/okvis/okvis_path          # trajectory
+/okvis/sam_masks           # eSAM segmentation overlay  (see caveat below)
+/okvis/language_rgb        # MaskCLIP feature overlay    (see caveat below)
 ```
+
+### Notes
+- Shut down cleanly to get the trajectory csv / meshes written:
+  `ros2 service call /okvis/shutdown std_srvs/srv/SetBool "{data: true}"`.
+- Both `okvis2x` and `okvis2x-fa` share `okvis_ws/src`, so switching envs does not need a re-clone
+- The image topics (`sam_masks`, `language_rgb`, `rgb0_matches`, `top_debug_view`) are advertised but stay silent unless `output_parameters.display_matches: true` in `okvis2.yaml`
+- `patches/` just for reference; everything should be fixed in the fork

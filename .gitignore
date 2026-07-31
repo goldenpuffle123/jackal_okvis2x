@@ -10,5 +10,8 @@ build
 install
 log
 src
+# findanything workspace (colcon --build-base/--install-base)
+build_fa
+install_fa
 *.md
 !README.md

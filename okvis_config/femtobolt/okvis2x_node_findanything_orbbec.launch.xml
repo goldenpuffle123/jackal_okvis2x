@@ -1,0 +1,33 @@
+<launch>
+    <!-- FindAnything (OKVIS2-X + eSAM + MaskCLIP) on the Orbbec Femto Bolt.
+         Requires the `findanything` pixi environment (USE_NN=ON USE_GPU=ON USE_COLIDMAP=ON). -->
+    <arg name="config_filename" default="/home/jackal/jackal_ws/okvis_onboard/okvis_config/femtobolt/okvis2.yaml" />
+    <arg name="se_config_filename" default="/home/jackal/jackal_ws/okvis_onboard/okvis_config/femtobolt/se2.yaml" />
+    <arg name="csv_path" default="/home/jackal/jackal_ws/okvis_onboard/okvis_config/femtobolt"/>
+    <arg name="mesh_cutoff_z" default="2.5"/>
+    <arg name="save_submap_meshes" default="false"/>
+    <arg name="rviz" default="true"/>
+    <arg name="query_gui" default="true"/>
+    <arg name="mesh" default="realsense.dae"/>
+    <!-- Do not raise: SE2 depth integration gets very slow with more OMP threads. -->
+    <set_env name="OMP_NUM_THREADS" value="4"/>
+
+    <node pkg="okvis" exec="okvis2x_language_network_node_subscriber" name="okvis" namespace="okvis">
+        <param name="imu_propagated_state_publishing_rate" type="float" value="50.0"/>
+        <param name="config_filename" value="$(var config_filename)"/>
+        <param name="se_config_filename" value="$(var se_config_filename)"/>
+        <param name="csv_path" value="$(var csv_path)"/>
+        <param name="mesh_cutoff_z" type="float" value="$(var mesh_cutoff_z)"/>
+        <param name="save_submap_meshes" value="$(var save_submap_meshes)"/>
+        <param name="mesh_file" value="file://$(find-pkg-share okvis)/resources/meshes/$(var mesh)"/>
+        <!-- Femto Bolt: cam0 is the rgb+depth camera (see okvis2.yaml), depth0 is aligned to it -->
+        <remap from="/okvis/cam0/image_raw" to="/femtobolt/color/image_raw"/>
+        <remap from="/okvis/depth0/image_raw" to="/femtobolt/depth/image_raw"/>
+        <remap from="/okvis/imu0" to="/femtobolt/gyro_accel/sample"/>
+    </node>
+
+    <!-- Qt text-query GUI: publishes CLIP text embeddings on /language_processor/embedding -->
+    <node pkg="language_feature_node" exec="query_to_tensor" name="language_feature_node" if="$(var query_gui)"/>
+
+    <node pkg="rviz2" exec="rviz2" name="rviz2" namespace="okvis" args="-d $(find-pkg-share okvis)/config/rviz2/rviz2_okvis2x_config.rviz" if="$(var rviz)"/>
+</launch>
