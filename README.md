@@ -55,8 +55,8 @@ Ensure the following topics are visible:
     - `ros2 topic echo /femtobolt/color/camera_info --once`
 ### Notes
 - Imu-Depth-Color timestamp synchronization bug when stopping and restarting Orbbec SDK
-    - **UNPLUG ORBBEC FROM COMPUTER AND RELAUNCH SDK**
-    - **ANALYZE TIMESTAMPS** with `python tools/bag_analyze.py rosbag2`
+    - Unplug orbbec from computer and relaunch sdk OR `pixi run orbbec reboot-cam`
+    - Analyze timestamps with `python tools/bag_analyze.py rosbag2`
 - FOV type changes based on depth/ir width and height (see [hardware docs](https://doc.orbbec.com/documentation/Orbbec%20Femto%20Bolt%20Documentation/Femto%20Bolt%20Hardware%20Specifications))
     1. **NFOV** (640x576 / 320x288): black corners but range is ~5 m --> black corners have been confirmed working with dense mapping - use this
     2. WFOV: no black corners but range is ~2 m --> try not to use this
