@@ -10,6 +10,9 @@ zed = ["zed", "jazzy"]
 orbbec = ["orbbec", "jazzy"]
 okvis2x = ["okvis2x", "jazzy"]
 okvis2x-fa = ["findanything", "jazzy"]
+# ROS 1 <-> ROS 2 bridging to the Jackal's onboard Noetic stack.
+noetic = ["noetic"]
+bridge = ["bridge"]
 
 [feature.jazzy.dependencies]
 python = "3.12.*"
@@ -234,3 +237,47 @@ tf-bridge = { cmd = "python $PIXI_PROJECT_ROOT/tools/okvis2_tf_bridge.py"}
 build = "cd okvis_ws && colcon build --symlink-install --build-base build_fa --install-base install_fa --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=ON -DUSE_GPU=ON -DUSE_COLIDMAP=ON -DHAVE_LIBREALSENSE=OFF -DUSE_CUDA=OFF"
 
 setup = { depends-on = ["clone", "patch", "build"] }
+
+# --- ROS 1 Noetic: talks to the robot's master -----------------------------
+[feature.noetic]
+channels = ["robostack-noetic", "conda-forge"]
+
+[feature.noetic.dependencies]
+ros-noetic-desktop = "*"
+
+# Sets ROS_MASTER_URI + ROS_IP. A script, not [activation.env]: the latter
+# hard-overrides the caller, making `ROS_MASTER_URI=... pixi run` a no-op.
+[feature.noetic.activation]
+scripts = ["scripts/noetic-activation.sh"]
+
+[feature.noetic.tasks]
+net = "bash scripts/net-check.sh"   # where this env points, and if it answers
+roscore = "roscore"                 # a LOCAL master, for offline testing
+
+[feature.bridge.dependencies]
+ros-jazzy-ros-base = "*"
+ros-jazzy-common-interfaces = "*"
+colcon-common-extensions = "*"
+cmake = "*"
+ninja = "*"
+gcc_linux-64 = "13.*"
+gxx_linux-64 = "13.*"
+pkg-config = "*"
+git = "*"
+
+# Sources both trees, plus the same master / DDS settings the other envs use.
+[feature.bridge.activation]
+scripts = ["scripts/bridge-activation.sh"]
+
+[feature.bridge.tasks]
+net = "bash scripts/net-check.sh"
+# ros1_bridge has no per-distro branches past galactic; master tracks rolling.
+clone = "mkdir -p bridge_ws/src && bash -c '[ -d bridge_ws/src/ros1_bridge ] || git clone -b master https://github.com/ros2/ros1_bridge.git'"
+build = "cd bridge_ws && colcon build --packages-select ros1_bridge --cmake-force-configure --cmake-args -DBUILD_TESTING=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+setup = { depends-on = ["clone", "build"] }
+# Bridges only what bridge_config/bridge_topics.yaml lists, with per-topic QoS.
+# Pass a different config as an argument.
+bridge-topics = "bash scripts/run-param-bridge.sh"
+# On demand, no whitelist -- but only once a matching subscriber exists.
+bridge-all = "bash scripts/run-bridge.sh dynamic_bridge"
+print-pairs = "bash scripts/run-bridge.sh dynamic_bridge --print-pairs"

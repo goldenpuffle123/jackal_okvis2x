@@ -3,6 +3,35 @@
 ## Environments
 - ROS2 Jazzy environment is configured to work on local host
 
+## ROS 1 bridge (Jackal onboard stack)
+
+The robot runs ROS 1 Noetic; everything here is ROS 2 Jazzy.
+[`ros1_bridge`](https://github.com/ros2/ros1_bridge) translates between them, using the separate
+`noetic` env as its ROS 1 tree.
+
+### Setup
+```bash
+pixi run -e bridge setup   # one-time, ~3 min
+```
+### Launch
+```bash
+pixi run -e bridge net            # where the ROS 1 side points, and if it answers
+pixi run -e bridge bridge-topics  # whitelist from bridge_config/bridge_topics.yaml
+```
+`ROS_MASTER_URI` defaults to the robot (`http://192.168.131.1:11311`); override with
+`JACKAL_MASTER=<host>`. `ROS_IP` is derived from the route to the master.
+### Notes
+- Only topics listed in [bridge_config/bridge_topics.yaml](bridge_config/bridge_topics.yaml) cross
+  the link, bidirectionally.
+- `pixi run -e bridge bridge-all` (`dynamic_bridge`) only creates a bridge
+  once a matching subscriber exists — RViz2 and anything that browses topics won't see the robot.
+- Shares one DDS graph with the sensor/okvis envs (domain 0, cyclonedds), so bridged and local
+  topics show up in the same `ros2 topic list`.
+- Use the `bridge` env only for the bridge: Noetic's python shadows Jazzy's there, so `ros2 topic
+  echo` resolves ROS 1 message classes. Do ROS 2 CLI work in the other envs.
+- Custom Clearpath types (`jackal_msgs/*` on `/status`, `/feedback`) need `ros1_bridge` rebuilt with
+  those definitions and are not bridged.
+
 ## ZED
 ### Setup
 - Set up [ZED SDK](https://www.stereolabs.com/developers/release/latest) (system-wide)

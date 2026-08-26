@@ -1,0 +1,59 @@
+# Topic whitelist for `pixi run -e bridge bridge-topics`, uploaded to the ROS 1
+# master under /jackal_bridge by scripts/run-param-bridge.sh.
+#
+# `type` is the ROS 2 type name (`pixi run -e bridge print-pairs` lists every
+# convertible pair). Every entry is BIDIRECTIONAL -- parameter_bridge has no
+# one-way mode -- so a local ROS 2 driver publishing /tf would also push its
+# frames onto the robot's tf tree.
+
+topics:
+  # --- transforms ---------------------------------------------------------
+  # The robot publishes /tf as the legacy ROS 1 `tf/tfMessage`.
+  # - topic: /tf
+  #   type: tf2_msgs/msg/TFMessage
+  #   queue_size: 100
+  # Latched on the ROS 1 side -> transient_local + keep_all here, so a node
+  # that starts late still gets the static transforms.
+  # - topic: /tf_static
+  #   type: tf2_msgs/msg/TFMessage
+  #   queue_size: 100
+  #   qos:
+  #     history: keep_all
+  #     durability: transient_local
+
+  # --- state --------------------------------------------------------------
+  # - topic: /odometry/filtered
+  #   type: nav_msgs/msg/Odometry
+  #   queue_size: 10
+  # - topic: /joint_states
+  #   type: sensor_msgs/msg/JointState
+  #   queue_size: 10
+  # - topic: /imu/data
+  #   type: sensor_msgs/msg/Imu
+  #   queue_size: 50
+  # - topic: /navsat/fix
+  #   type: sensor_msgs/msg/NavSatFix
+  #   queue_size: 10
+  # - topic: /e_stop
+  #   type: std_msgs/msg/Bool
+  #   queue_size: 10
+  # - topic: /diagnostics
+  #   type: diagnostic_msgs/msg/DiagnosticArray
+  #   queue_size: 10
+
+  # --- lidar --------------------------------------------------------------
+  # 2D slice only. /ouster/points is tens of MB/s and will eat the robot link.
+  # - topic: /ouster/scan
+  #   type: sensor_msgs/msg/LaserScan
+  #   queue_size: 5
+
+  # --- commands (ROS 2 -> robot) -----------------------------------------
+  - topic: /cmd_vel
+    type: geometry_msgs/msg/Twist
+    queue_size: 10
+
+# Not bridgeable without rebuilding ros1_bridge with the message definitions:
+#   /status, /feedback   jackal_msgs/*   (custom Clearpath types)
+
+services_1_to_2: []
+services_2_to_1: []

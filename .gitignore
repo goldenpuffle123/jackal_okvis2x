@@ -15,3 +15,5 @@ build_fa
 install_fa
 *.md
 !README.md
+# ros1_bridge build workspace (regenerate with: pixi run -e bridge build-bridge)
+bridge_ws/
