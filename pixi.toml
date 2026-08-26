@@ -135,6 +135,7 @@ ros-jazzy-ament-lint-common = "*"
 clone-orbbec = { cmd = "mkdir -p orbbec_ws/src && bash -c '[ -d orbbec_ws/src/OrbbecSDK_ROS2 ] || git clone -b v2-main --revision=cb24b007cd3309bc5340fa89d5082b69eba20601 https://github.com/orbbec/OrbbecSDK_ROS2.git orbbec_ws/src/OrbbecSDK_ROS2'" }
 build-orbbec = { cmd = "cd orbbec_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release", depends-on = ["clone-orbbec"] }
 setup = { depends-on = ["build-orbbec"] }
+reboot-cam = { cmd = "ros2 service call /femtobolt/reboot_device std_srvs/srv/Empty" }
 
 [feature.orbbec.activation]
 scripts = ["orbbec_ws/install/setup.bash"]
@@ -167,7 +168,7 @@ scripts = ["okvis_ws/install/setup.bash"]
 
 [feature.okvis2x.tasks]
 clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submodules https://github.com/goldenpuffle123/okvis2x_femtobolt.git || true) && (git clone https://github.com/ethz-mrl/language_feature_msgs.git || true) && (git clone https://github.com/ethz-mrl/language_feature_node.git || true)"
-
+tf-bridge = { cmd = "python $PIXI_PROJECT_ROOT/tools/okvis2_tf_bridge.py"}
 # Mapping without color
 # build = "cd okvis_ws && colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=OFF -DHAVE_LIBREALSENSE=OFF -DUSE_COLIDMAP=OFF -DCERES_USE_CUDA=OFF -DCMAKE_DISABLE_FIND_PACKAGE_CUDA=ON -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON"
 
@@ -221,6 +222,9 @@ scripts = ["okvis_ws/install_fa/setup.bash"]
 
 [feature.findanything.tasks]
 clone = "mkdir -p okvis_ws/src && cd okvis_ws/src && (git clone --recurse-submodules https://github.com/goldenpuffle123/okvis2x_femtobolt.git || true) && (git clone https://github.com/ethz-mrl/language_feature_msgs.git || true) && (git clone https://github.com/ethz-mrl/language_feature_node.git || true)"
+
+tf-bridge = { cmd = "python $PIXI_PROJECT_ROOT/tools/okvis2_tf_bridge.py"}
+
 
 build = "cd okvis_ws && colcon build --symlink-install --build-base build_fa --install-base install_fa --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_ROS2=ON -DUSE_NN=ON -DUSE_GPU=ON -DUSE_COLIDMAP=ON -DHAVE_LIBREALSENSE=OFF -DUSE_CUDA=OFF"
 
